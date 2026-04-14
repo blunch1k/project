@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 3
+names: ['Airaplan', 'Birds', 'Drons']
+
+roboflow:
+  workspace: tws-gqhsl
+  project: gooddrons-qv7c4
+  version: 8
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/tws-gqhsl/gooddrons-qv7c4/dataset/8
