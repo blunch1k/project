@@ -1,39 +1,70 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import torch
 from torchvision.datasets import CocoDetection
 from torchvision.transforms import ToTensor
-from torchvision.models.detection import fasterrcnn_resnet50_fpn
+from torchvision.models.detection import (
+    fasterrcnn_resnet50_fpn,
+    FasterRCNN_ResNet50_FPN_Weights
+)
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from coco_dataset import collate_fn
 import matplotlib.pyplot as plt
 from torchvision.datasets import CocoDetection
 from torchvision.transforms import ToTensor
 from coco_dataset import collate_fn
+from transform_detection import Compose, ToTensor, RandomHorizontalFlip, RandomBrightness,RandomResize,ColorJitter
+from coco_dataset import CocoWrapper
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda")
 
-train_ds = CocoDetection(
-    root="dataset/train/images",
-    annFile="dataset/train/instances_train.json",
-    transform=ToTensor()
-)
-val_ds = CocoDetection(
-    root="dataset/val/images",
-    annFile="dataset/val/instances_val.json",
-    transform=ToTensor()
+train_base = CocoDetection(
+    root="project/dataset/train",
+    annFile="project/dataset/train/_annotations.coco.json",
+    transforms=None
 )
 
+val_base = CocoDetection(
+    root="project/dataset/valid",
+    annFile="project/dataset/valid/_annotations.coco.json",
+    transform=None
+)
+
+
+train_ds = CocoWrapper(
+    train_base,
+    transforms=Compose([
+        RandomResize(),              # 1. геометрия
+        RandomHorizontalFlip(0.5),   # 2. геометрия
+        ColorJitter(0.3,0.3,0.3,0.05), # 3. цвет
+        ToTensor(),                 # 4. в конце
+    ])
+)
+
+val_ds = CocoWrapper(
+    val_base,
+    transforms=Compose([
+        ToTensor()
+    ])
+)
 val_dl = torch.utils.data.DataLoader(
     val_ds,
-    batch_size=4,
+    batch_size=16,
     shuffle=False,
     collate_fn=collate_fn
 )
 
-train_dl = torch.utils.data.DataLoader(train_ds, 4, True, collate_fn=collate_fn)
+train_dl = torch.utils.data.DataLoader(train_ds, 16, True, collate_fn=collate_fn)
 
-model = fasterrcnn_resnet50_fpn(weights=None)
-in_f = model.roi_heads.box_predictor.cls_score.in_features
-model.roi_heads.box_predictor = FastRCNNPredictor(in_f, 4)
+model = fasterrcnn_resnet50_fpn(
+    weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT
+)
+in_features = model.roi_heads.box_predictor.cls_score.in_features
+model.roi_heads.box_predictor = FastRCNNPredictor(
+    in_features,
+    num_classes=4
+)
 model.to(DEVICE)
 
 opt = torch.optim.Adam(model.parameters(), 1e-4)
@@ -82,7 +113,7 @@ for epoch in range(200):
     if val_loss < best_val:
         best_val = val_loss
         wait = 0
-        torch.save(model.state_dict(), "ssd_trained.pth")
+        torch.save(model.state_dict(), "rcnn_trained.pth")
     else:
         wait += 1
         if wait >= patience:

@@ -1,30 +1,52 @@
+import os
 import torch
+from torchvision import transforms as T
+import random
 from torchvision.datasets import CocoDetection
 from torchvision.transforms import ToTensor
-from torchvision.models.detection import ssd300_vgg16
+from torchvision.models.detection import ssd300_vgg16, SSD300_VGG16_Weights
 from torchvision.models.detection.ssd import SSDHead
 from coco_dataset import collate_fn
 import matplotlib.pyplot as plt
+from transform_detection import Compose, ToTensor, RandomHorizontalFlip, RandomBrightness,RandomResize,ColorJitter
+from coco_dataset import CocoWrapper
+DEVICE = torch.device("cuda")
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-train_ds = CocoDetection(
-    root="dataset/train/images",
-    annFile="dataset/train/instances_train.json",
-    transform=ToTensor()
+train_base = CocoDetection(
+    root="project/dataset/train",
+    annFile="project/dataset/train/_annotations.coco.json",
+    transforms=None
 )
 
-val_ds = CocoDetection(
-    root="dataset/val/images",
-    annFile="dataset/val/instances_val.json",
-    transform=ToTensor()
+val_base = CocoDetection(
+    root="project/dataset/valid",
+    annFile="project/dataset/valid/_annotations.coco.json",
+    transform=None
 )
 
-train_dl = torch.utils.data.DataLoader(train_ds, 4, True, collate_fn=collate_fn)
-val_dl = torch.utils.data.DataLoader(val_ds, 4, False, collate_fn=collate_fn)
 
-model = ssd300_vgg16(weights=None)
-model.head = SSDHead([512,1024,512,256,256,256],[4,6,6,6,4,4],4)
+train_ds = CocoWrapper(
+    train_base,
+    transforms=Compose([
+        RandomResize(),              # 1. геометрия
+        RandomHorizontalFlip(0.5),   # 2. геометрия
+        ColorJitter(0.3,0.3,0.3,0.05), # 3. цвет
+        ToTensor(),                 # 4. в конце
+    ])
+)
+
+val_ds = CocoWrapper(
+    val_base,
+    transforms=Compose([
+        ToTensor()
+    ])
+)
+
+train_dl = torch.utils.data.DataLoader(train_ds, 16, True, collate_fn=collate_fn)
+val_dl = torch.utils.data.DataLoader(val_ds, 16, False, collate_fn=collate_fn)
+
+model = ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
+model.head = SSDHead([512,1024,512,256,256,256],[4,6,6,6,4,4],num_classes=4)
 model.to(DEVICE)
 
 opt = torch.optim.Adam(model.parameters(), 1e-4)

@@ -4,7 +4,7 @@ def coco_to_target(anns):
     boxes, labels = [], []
 
     for a in anns:
-        x, y, w, h = a['bbox']
+        x,y,w,h = a['bbox']
         boxes.append([x, y, x+w, y+h])
         labels.append(a['category_id'])
 
@@ -15,10 +15,23 @@ def coco_to_target(anns):
     return target
 
 
-def collate_fn(batch):
-    imgs, targets = [], []
-    for img, anns in batch:
+class CocoWrapper:
+    def __init__(self, dataset, transforms=None):
+        self.dataset = dataset
+        self.transforms = transforms
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        img, anns = self.dataset[idx]
         target = coco_to_target(anns)
-        imgs.append(img)
-        targets.append(target)
-    return imgs, targets
+
+        if self.transforms:
+            img, target = self.transforms(img, target)
+
+        return img, target
+
+
+def collate_fn(batch):
+    return tuple(zip(*batch))

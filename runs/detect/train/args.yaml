@@ -1,10 +1,10 @@
 task: detect
 mode: train
 model: yolo26s.pt
-data: data/data.yaml
-epochs: 50
+data: project/data_yolo/data.yaml
+epochs: 200
 time: null
-patience: 100
+patience: 5
 batch: 16
 imgsz: 640
 save: true
@@ -13,7 +13,7 @@ cache: false
 device: '0'
 workers: 0
 project: null
-name: yolo_drone_project
+name: train
 exist_ok: false
 pretrained: true
 optimizer: auto
@@ -107,4 +107,4 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-save_dir: C:\Users\SystemX\Desktop\grok\runs\detect\yolo_drone_project
+save_dir: C:\Users\blunc\project\runs\detect\train
