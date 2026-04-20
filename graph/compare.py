@@ -43,7 +43,7 @@ def load_coco_gt(ann_file):
 def load_yolo_gt(labels_dir, images_dir):
     gt = {}
 
-    # создаём словарь: имя без .txt -> реальное имя картинки
+    # словарь: имя без .txt 
     image_files = os.listdir(images_dir)
     name_map = {}
 

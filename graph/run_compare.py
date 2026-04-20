@@ -1,4 +1,4 @@
-from compare import run_compare
+from graph.compare import run_compare
 
 import torch
 from torchvision.models.detection import ssd300_vgg16

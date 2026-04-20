@@ -9,13 +9,12 @@ from torchvision.models.detection import (
     FasterRCNN_ResNet50_FPN_Weights
 )
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from coco_dataset import collate_fn
+from coco_dataset import collate_fn,CocoWrapper
 import matplotlib.pyplot as plt
-from torchvision.datasets import CocoDetection
-from torchvision.transforms import ToTensor
+
 from coco_dataset import collate_fn
 from transform_detection import Compose, ToTensor, RandomHorizontalFlip, RandomBrightness,RandomResize,ColorJitter
-from coco_dataset import CocoWrapper
+
 
 DEVICE = torch.device("cuda")
 
